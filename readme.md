@@ -51,7 +51,7 @@ jobs:
         pnpm build
         pnpm cdktf synth
 
-    - uses: danielBreitlauch/cdktf-actions/terraform-plan
+    - uses: danielBreitlauch/cdktf-actions/plan
       with:
         GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
         stage: ${{ matrix.stage }}
@@ -98,7 +98,7 @@ jobs:
         pnpm build
         pnpm cdktf synth
 
-    - uses: danielBreitlauch/cdktf-actions/terraform-deploy
+    - uses: danielBreitlauch/cdktf-actions/deploy
       with:
         stage: ${{ matrix.stage }}
         working-directory: ./Infrastructure
