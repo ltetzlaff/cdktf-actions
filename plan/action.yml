@@ -1,0 +1,108 @@
+name: "Terraform plan"
+description: "Plans the given stage in Terraform and comments the plan in the PR"
+
+inputs:
+  working-directory:
+    description: "the working directory e.g. where cdktf.json is"
+    default: "./"
+    required: false
+  stage:
+    description: "the stage to plan"
+    required: true
+  GITHUB_TOKEN:
+    description: "Access token to post a comment"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_wrapper: false
+
+    - name: List Stacks
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      id: stacks
+      run: |
+        stacks=$(ls cdktf.out/stacks | grep ':${{ inputs.stage }}' || true )
+        stacks="${stacks//$'\n'/' '}"
+        stacks="${stacks//$'\r'/' '}"
+        echo $stacks
+        echo "::set-output name=stacks::$stacks"
+
+    - name: Plan Terraform
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      id: plan
+      continue-on-error: true
+      run: |
+        plans=""
+        splitter="---------:----------\n"
+        for STACK in ${{ steps.stacks.outputs.stacks }} ; do
+          pushd cdktf.out/stacks/$STACK
+          terraform init --upgrade
+          plans="$plans\n$splitter$STACK\n$(terraform plan -input=false -lock=false -no-color)"
+          popd
+        done
+        plans="${plans//'%'/'%25'}"
+        plans="${plans//$'\n'/'%0A'}"
+        plans="${plans//$'\r'/'%0D'}"
+        echo $plans
+        echo "::set-output name=plan::$plans"
+
+    - uses: actions/github-script@v6
+      with:
+        github-token: ${{ inputs.GITHUB_TOKEN }}
+        script: |
+          const { data: comments } = await github.rest.issues.listComments({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+          })
+          const botComment = comments.find(comment => {
+            return comment.user.type === 'Bot' && comment.body.includes('#### Terraform Plan ') && comment.body.includes('### Stage 🌳 \`${{ inputs.stage }}')   
+          })
+
+          const stacksV = `${{ steps.stacks.outputs.stacks }}`
+          const stacks = stacksV ? stacksV.split(' ') : []
+
+          const plansV = `${{ steps.plan.outputs.plan }}`
+          const plans = plansV ? plansV.split("---------:----------\n") : ["head"]
+          plans.shift()
+          
+          var output = `### Stage 🌳 \`${{ inputs.stage }}\`
+          #### Terraform Plan 📖 \`${{ steps.plan.outcome }}\`
+
+          `;
+
+          for (var index in stacks) {
+            var plan = plans[index].split('\n').slice(1).join('\n')
+            if (plan.includes('so no changes are needed.')) {
+              continue;
+            }
+            output += `<details><summary>Show Plan for ${stacks[index]}</summary>
+
+          \`\`\`terraform
+          ${plan}
+          \`\`\`
+          </details>
+              
+          `;
+          }
+
+          if (botComment) {
+            github.rest.issues.updateComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: botComment.id,
+              body: output
+            })
+          } else {
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            })
+          }

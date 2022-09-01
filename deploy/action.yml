@@ -1,0 +1,40 @@
+name: "Terraform deploy"
+description: "Deploys the given stage in Terraform"
+
+inputs:
+  working-directory:
+    description: "the working directory e.g. where cdktf.json is"
+    default: "./"
+    required: false
+  stage:
+    description: "the stage to deploy"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_wrapper: false
+
+    - name: List Stacks
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      id: stacks
+      run: |
+        stacks=$(ls cdktf.out/stacks | grep ':${{ inputs.stage }}')
+        stacks="${stacks//$'\n'/' '}"
+        stacks="${stacks//$'\r'/' '}"
+        echo $stacks
+        echo "::set-output name=stacks::$stacks"
+
+    - name: Deploy Terraform
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        for STACK in ${{ steps.stacks.outputs.stacks }} ; do
+          pushd cdktf.out/stacks/$STACK
+          terraform init --upgrade
+          terraform apply -input=false -no-color -auto-approve
+          popd
+        done
