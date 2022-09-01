@@ -42,7 +42,8 @@ runs:
         for STACK in ${{ steps.stacks.outputs.stacks }} ; do
           pushd cdktf.out/stacks/$STACK
           terraform init --upgrade
-          plans="$plans\n$splitter$STACK\n$(terraform plan -input=false -lock=false -no-color)"
+          terraform plan -input=false -lock=false -no-color -out=tfplan
+          plans="$plans\n$splitter$STACK\n$(terraform show tfplan -no-color)"
           popd
         done
         plans="${plans//'%'/'%25'}"
