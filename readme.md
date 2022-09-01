@@ -51,7 +51,7 @@ jobs:
         pnpm build
         pnpm cdktf synth
 
-    - uses: danielBreitlauch/cdktf-actions/plan
+    - uses: danielBreitlauch/cdktf-actions/plan@v1
       with:
         GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
         stage: ${{ matrix.stage }}
@@ -98,7 +98,7 @@ jobs:
         pnpm build
         pnpm cdktf synth
 
-    - uses: danielBreitlauch/cdktf-actions/deploy
+    - uses: danielBreitlauch/cdktf-actions/deploy@v1
       with:
         stage: ${{ matrix.stage }}
         working-directory: ./Infrastructure
