@@ -22,7 +22,7 @@ runs:
       working-directory: ${{ inputs.working-directory }}
       id: stacks
       run: |
-        stacks=$(ls cdktf.out/stacks | grep ':${{ inputs.stage }}')
+        stacks=$(ls cdktf.out/stacks | grep ':${{ inputs.stage }}' || true )
         stacks="${stacks//$'\n'/' '}"
         stacks="${stacks//$'\r'/' '}"
         echo $stacks
