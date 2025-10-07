@@ -30,15 +30,15 @@ jobs:
         stage: [dev, stage, prod]
 
     steps:
-    - uses: actions/checkout@v3
-    - uses: pnpm/action-setup@v2  
-    - uses: actions/setup-node@v3
+    - uses: actions/checkout@v5
+    - uses: pnpm/action-setup@v4
+    - uses: actions/setup-node@v5
       with:
-        node-version: 16
+        node-version: 24
         cache: "pnpm"
         registry-url: https://npm.pkg.github.com/
-    
-    - uses: aws-actions/configure-aws-credentials@v1
+
+    - uses: aws-actions/configure-aws-credentials@v5
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -51,7 +51,7 @@ jobs:
         pnpm build
         pnpm cdktf synth
 
-    - uses: danielBreitlauch/cdktf-actions/plan@v1
+    - uses: ltetzlaff/cdktf-actions/plan@v2
       with:
         GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
         stage: ${{ matrix.stage }}
@@ -71,21 +71,21 @@ on:
 jobs:
   deploy:
     if: github.event.pull_request.merged
-    runs-on: ubuntu-latest    
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         stage: [dev, stage, prod]
 
     steps:
-    - uses: actions/checkout@v3
-    - uses: pnpm/action-setup@v2  
-    - uses: actions/setup-node@v3
+    - uses: actions/checkout@v5
+    - uses: pnpm/action-setup@v4
+    - uses: actions/setup-node@v5
       with:
-        node-version: 16
+        node-version: 24
         cache: "pnpm"
         registry-url: https://npm.pkg.github.com/
-    
-    - uses: aws-actions/configure-aws-credentials@v1
+
+    - uses: aws-actions/configure-aws-credentials@v5
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -98,7 +98,7 @@ jobs:
         pnpm build
         pnpm cdktf synth
 
-    - uses: danielBreitlauch/cdktf-actions/deploy@v1
+    - uses: ltetzlaff/cdktf-actions/deploy@v2
       with:
         stage: ${{ matrix.stage }}
         working-directory: ./Infrastructure

@@ -16,7 +16,7 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - uses: hashicorp/setup-terraform@v2
+    - uses: hashicorp/setup-terraform@v5
       with:
         terraform_wrapper: false
 
@@ -52,7 +52,7 @@ runs:
         echo $plans
         echo "::set-output name=plan::$plans"
 
-    - uses: actions/github-script@v6
+    - uses: actions/github-script@v8
       with:
         github-token: ${{ inputs.GITHUB_TOKEN }}
         script: |
@@ -62,7 +62,7 @@ runs:
             issue_number: context.issue.number,
           })
           const botComment = comments.find(comment => {
-            return comment.user.type === 'Bot' && comment.body.includes('#### Terraform Plan ') && comment.body.includes('### Stage 🌳 \`${{ inputs.stage }}')   
+            return comment.user.type === 'Bot' && comment.body.includes('#### Terraform Plan ') && comment.body.includes('### Stage 🌳 \`${{ inputs.stage }}')
           })
 
           const stacksV = `${{ steps.stacks.outputs.stacks }}`
@@ -71,7 +71,7 @@ runs:
           const plansV = `${{ steps.plan.outputs.plan }}`
           const plans = plansV ? plansV.split("---------:----------\n") : ["head"]
           plans.shift()
-          
+
           var output = `### Stage 🌳 \`${{ inputs.stage }}\`
           #### Terraform Plan 📖 \`${{ steps.plan.outcome }}\`
 
@@ -88,7 +88,7 @@ runs:
           ${plan}
           \`\`\`
           </details>
-              
+
           `;
           }
 
